@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="580" viewBox="0 0 960 580" font-family="Microsoft YaHei, Noto Sans CJK SC, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+    <style>
+      .t { fill:#0f172a; font-size:22px; font-weight:700; }
+      .s { fill:#64748b; font-size:13px; }
+      .ct { fill:#0f172a; font-size:16px; font-weight:700; }
+      .b { fill:#ffffff; stroke:#cbd5e1; stroke-width:1.5; }
+      .l { fill:#1f2937; font-size:14px; }
+      .m { fill:#475569; font-size:12px; }
+      .a { stroke:#64748b; stroke-width:2; fill:none; marker-end:url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="960" height="580" fill="#ffffff"/>
+  <text x="40" y="42" class="t">Kleinberg 可导航性模型：算法总览</text>
+  <text x="40" y="68" class="s">三个阶段：生成图 → 局部转发 → 汇总指标。箭头表示数据流。</text>
+
+  <rect x="24" y="92" width="300" height="430" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+  <rect x="340" y="92" width="280" height="430" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+  <rect x="636" y="92" width="300" height="430" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+
+  <text x="44" y="122" class="ct">1. 图生成</text>
+  <text x="360" y="122" class="ct">2. 贪心路由</text>
+  <text x="656" y="122" class="ct">3. 批量统计</text>
+
+  <rect x="44" y="140" width="260" height="52" rx="8" class="b"/>
+  <text x="60" y="162" class="l">输入：n, α, k, seed</text>
+  <text x="60" y="181" class="m">n 为网格边长，k 首版为 1</text>
+
+  <rect x="44" y="208" width="260" height="52" rx="8" class="b"/>
+  <text x="60" y="230" class="l">环面格点 V = Z_n × Z_n</text>
+  <text x="60" y="249" class="m">节点编号 id = y·n + x</text>
+
+  <rect x="44" y="276" width="260" height="52" rx="8" class="b"/>
+  <text x="60" y="298" class="l">本地边 N_L(u)</text>
+  <text x="60" y="317" class="m">右、下、左、上四个邻居</text>
+
+  <rect x="44" y="344" width="260" height="66" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+  <text x="60" y="366" class="l">长程边 X_u</text>
+  <text x="60" y="385" class="m">P(X_u = v) ∝ d(u,v)^−α</text>
+  <text x="60" y="402" class="m">分层采样，O(N log d_max)</text>
+
+  <rect x="44" y="426" width="260" height="52" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+  <text x="60" y="448" class="l">得到随机图 G_α</text>
+  <text x="60" y="467" class="m">本地边 + 长程边</text>
+
+  <rect x="360" y="140" width="240" height="52" rx="8" class="b"/>
+  <text x="376" y="162" class="l">输入：起点 s、目标 t</text>
+  <text x="376" y="181" class="m">s ≠ t，均匀抽取</text>
+
+  <rect x="360" y="208" width="240" height="52" rx="8" class="b"/>
+  <text x="376" y="230" class="l">当前节点 u</text>
+  <text x="376" y="249" class="m">计算 d(u, t)</text>
+
+  <rect x="360" y="276" width="240" height="66" rx="8" class="b"/>
+  <text x="376" y="298" class="l">候选集合 N(u)</text>
+  <text x="376" y="317" class="m">N_L(u) ∪ {X_u}</text>
+  <text x="376" y="334" class="m">本地边与长程边一起比较</text>
+
+  <rect x="360" y="358" width="240" height="52" rx="8" fill="#fefce8" stroke="#fde047" stroke-width="1.5"/>
+  <text x="376" y="380" class="l">选 d(v, t) 最小的 v</text>
+  <text x="376" y="399" class="m">严格小于，固定平局顺序</text>
+
+  <rect x="360" y="426" width="240" height="66" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5"/>
+  <text x="376" y="448" class="l">是否有更近的 v？</text>
+  <text x="376" y="467" class="m">有：前进，步数 +1</text>
+  <text x="376" y="484" class="m">无：dead-end；超过 10n：limit</text>
+
+  <rect x="656" y="140" width="260" height="52" rx="8" class="b"/>
+  <text x="672" y="162" class="l">重复 graphs × pairs 次</text>
+  <text x="672" y="181" class="m">每图、每对使用派生种子</text>
+
+  <rect x="656" y="208" width="260" height="52" rx="8" class="b"/>
+  <text x="672" y="230" class="l">成功率 + Wilson 95% CI</text>
+  <text x="672" y="249" class="m">成功次数 / 总次数</text>
+
+  <rect x="656" y="276" width="260" height="52" rx="8" class="b"/>
+  <text x="672" y="298" class="l">平均跳数 + 标准误</text>
+  <text x="672" y="317" class="m">只统计成功路径</text>
+
+  <rect x="656" y="344" width="260" height="52" rx="8" class="b"/>
+  <text x="672" y="366" class="l">失败类型分布</text>
+  <text x="672" y="385" class="m">dead-end 与 limit 分开计数</text>
+
+  <rect x="656" y="412" width="260" height="52" rx="8" class="b"/>
+  <text x="672" y="434" class="l">长程边使用率</text>
+  <text x="672" y="453" class="m">longHops / steps</text>
+
+  <rect x="656" y="480" width="260" height="32" rx="8" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1.5"/>
+  <text x="672" y="501" class="l">输出：结果 + configHash</text>
+
+  <path class="a" d="M174 192 L174 208"/>
+  <path class="a" d="M174 260 L174 276"/>
+  <path class="a" d="M174 328 L174 344"/>
+  <path class="a" d="M174 410 L174 426"/>
+
+  <path class="a" d="M480 192 L480 208"/>
+  <path class="a" d="M480 260 L480 276"/>
+  <path class="a" d="M480 342 L480 358"/>
+  <path class="a" d="M480 410 L480 426"/>
+
+  <path class="a" d="M786 192 L786 208"/>
+  <path class="a" d="M786 260 L786 276"/>
+  <path class="a" d="M786 328 L786 344"/>
+  <path class="a" d="M786 396 L786 412"/>
+  <path class="a" d="M786 464 L786 480"/>
+
+  <path class="a" d="M324 300 L340 300"/>
+  <text x="326" y="292" class="m">G_α</text>
+  <path class="a" d="M620 300 L636 300"/>
+  <text x="620" y="292" class="m">单次结果</text>
+
+  <text x="40" y="552" class="m">首版：二维环面，k = 1，严格贪心，固定平局顺序，步数上限 10n；随机性由 seed 派生，浏览器与 Node 结果一致。</text>
+</svg>

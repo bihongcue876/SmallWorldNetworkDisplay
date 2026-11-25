@@ -1,0 +1,24 @@
+# 依赖与构建产物
+node_modules/
+dist/
+.npm-cache/
+
+# 本地运行痕迹
+.edge-profile/
+*.log
+shots/
+
+# 批量实验原始数据：可用 npm run exp 重新生成
+results/
+
+# 课程论文成品：随课程提交，不入公共库
+paper/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 论文工具与内部工作记录：留在本地，不入公共库
+scripts/build_paper.py
+scripts/make_figures.py
+WORKLOG.md
