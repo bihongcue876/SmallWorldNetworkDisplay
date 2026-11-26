@@ -1,5 +1,6 @@
 import './style.css';
 import { ABOUT_HTML } from './about.ts';
+import { THEORY_HTML } from './theory.ts';
 import {
   buildGraph,
   greedyRoute,
@@ -52,7 +53,10 @@ const mFailure = $<HTMLElement>('m-failure');
 
 const tabDemo = $<HTMLButtonElement>('tab-demo');
 const tabBatch = $<HTMLButtonElement>('tab-batch');
+const tabTheory = $<HTMLButtonElement>('tab-theory');
 const batchPanel = $<HTMLElement>('batch-panel');
+const theoryPanel = $<HTMLElement>('theory-panel');
+const theoryBody = $<HTMLElement>('theory-body');
 const graphsInput = $<HTMLInputElement>('graphs-input');
 const pairsInput = $<HTMLInputElement>('pairs-input');
 const runBatchBtn = $<HTMLButtonElement>('run-batch');
@@ -334,20 +338,34 @@ function exportCsv(): void {
 
 /* ---------- 事件绑定 ---------- */
 
-tabDemo.addEventListener('click', () => {
-  tabDemo.classList.add('active');
-  tabBatch.classList.remove('active');
-  batchPanel.hidden = true;
-  document.body.classList.remove('in-batch');
-  draw();
-});
+/** 三个视图互斥：单次演示、批量实验、结论。 */
+type TabName = 'demo' | 'batch' | 'theory';
 
-tabBatch.addEventListener('click', () => {
-  tabBatch.classList.add('active');
-  tabDemo.classList.remove('active');
-  batchPanel.hidden = false;
-  document.body.classList.add('in-batch');
-});
+function activateTab(name: TabName): void {
+  tabDemo.classList.toggle('active', name === 'demo');
+  tabBatch.classList.toggle('active', name === 'batch');
+  tabTheory.classList.toggle('active', name === 'theory');
+  batchPanel.hidden = name !== 'batch';
+  theoryPanel.hidden = name !== 'theory';
+  document.body.classList.toggle('in-batch', name === 'batch');
+  document.body.classList.toggle('in-theory', name === 'theory');
+  if (name === 'demo') {
+    history.replaceState(null, '', location.pathname + location.search);
+    draw();
+  } else {
+    history.replaceState(null, '', `#${name}`);
+  }
+}
+
+/** 地址栏 #batch / #theory 可直接进入对应视图。 */
+function tabFromHash(): TabName {
+  const hash = location.hash.replace('#', '');
+  return hash === 'batch' || hash === 'theory' ? hash : 'demo';
+}
+
+tabDemo.addEventListener('click', () => activateTab('demo'));
+tabBatch.addEventListener('click', () => activateTab('batch'));
+tabTheory.addEventListener('click', () => activateTab('theory'));
 
 playBtn.addEventListener('click', () => {
   if (!route) return;
@@ -471,6 +489,7 @@ about.addEventListener('click', (event) => {
 window.addEventListener('resize', () => draw());
 
 aboutBody.innerHTML = ABOUT_HTML;
+theoryBody.innerHTML = THEORY_HTML;
 
 if (localStorage.getItem('kleinberg-about-seen') !== '1') {
   about.hidden = false;
@@ -479,3 +498,6 @@ if (localStorage.getItem('kleinberg-about-seen') !== '1') {
 buildPresets();
 speedValue.textContent = speedRange.value;
 rebuild();
+
+const initialTab = tabFromHash();
+if (initialTab !== 'demo') activateTab(initialTab);
