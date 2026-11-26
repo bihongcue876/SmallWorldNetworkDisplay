@@ -13,27 +13,31 @@ export interface Scene {
 }
 
 interface Frame {
-  pad: number;
+  padX: number;
+  padY: number;
   cell: number;
   size: number;
 }
 
 function frameFor(width: number, height: number, n: number): Frame {
-  const size = Math.min(width, height) - 28;
+  // 取短边作绘图区，横纵各自居中：画布比高度宽时，若共用一个
+  // 边距，纵向会溢出，最下面一行被推出画布外。
+  const size = Math.min(width, height) - 48;
   const cell = size / n;
   return {
-    pad: (width - size) / 2,
+    padX: (width - size) / 2,
+    padY: (height - size) / 2,
     cell,
     size,
   };
 }
 
 function px(frame: Frame, x: number): number {
-  return frame.pad + (x + 0.5) * frame.cell;
+  return frame.padX + (x + 0.5) * frame.cell;
 }
 
 function py(frame: Frame, y: number): number {
-  return frame.pad + (y + 0.5) * frame.cell;
+  return frame.padY + (y + 0.5) * frame.cell;
 }
 
 function edgeColor(distance: number, maxD: number): string {
@@ -74,11 +78,12 @@ export function drawScene(canvas: HTMLCanvasElement, scene: Scene): void {
   const step = dense ? 1 : 8;
   ctx.beginPath();
   for (let i = 0; i <= n; i += step) {
-    const p = frame.pad + i * frame.cell;
-    ctx.moveTo(p, frame.pad);
-    ctx.lineTo(p, frame.pad + frame.size);
-    ctx.moveTo(frame.pad, p);
-    ctx.lineTo(frame.pad + frame.size, p);
+    const p = frame.padX + i * frame.cell;
+    const q = frame.padY + i * frame.cell;
+    ctx.moveTo(p, frame.padY);
+    ctx.lineTo(p, frame.padY + frame.size);
+    ctx.moveTo(frame.padX, q);
+    ctx.lineTo(frame.padX + frame.size, q);
   }
   ctx.stroke();
 
@@ -215,8 +220,8 @@ export function nodeAt(
 ): number | null {
   const rect = canvas.getBoundingClientRect();
   const frame = frameFor(rect.width, rect.height, n);
-  const x = Math.floor((clientX - rect.left - frame.pad) / frame.cell);
-  const y = Math.floor((clientY - rect.top - frame.pad) / frame.cell);
+  const x = Math.floor((clientX - rect.left - frame.padX) / frame.cell);
+  const y = Math.floor((clientY - rect.top - frame.padY) / frame.cell);
   if (x < 0 || y < 0 || x >= n || y >= n) return null;
   return y * n + x;
 }
