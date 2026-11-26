@@ -147,7 +147,6 @@ button.ghost {
   gap: 14px;
   padding: 14px 20px;
   min-height: 0;
-  align-items: start;
 }
 
 /* 批量视图：隐藏画布与指标卡，结果表占据中间整栏。 */
@@ -257,7 +256,7 @@ input[type="range"] {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
-  min-height: 520px;
+  min-height: 0;
   overflow: hidden;
 }
 
