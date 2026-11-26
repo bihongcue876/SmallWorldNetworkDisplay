@@ -1,11 +1,12 @@
 name: deploy-pages
 
-# 推送到 master 自动构建并发布到 GitHub Pages。
-# 首次使用需在仓库 Settings → Pages → Build and deployment
-# 中把 Source 设为 "GitHub Actions"。
+# 仅手动触发。自动开通 Pages 需要仓库管理权限，GITHUB_TOKEN 拿不到，
+# 所以首次必须由仓库所有者到 Settings → Pages → Build and deployment
+# 把 Source 选成 "GitHub Actions"。开通成功并确认能发布之后，再把下面的
+# push 触发器放开，恢复推送即部署：
+#   push:
+#     branches: [master]
 on:
-  push:
-    branches: [master]
   workflow_dispatch:
 
 permissions:
@@ -15,7 +16,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
