@@ -7,12 +7,11 @@ from PIL import Image, ImageDraw, ImageFont
 W, H = 960, 480
 ROOT = Path(__file__).resolve().parent.parent
 
-# 黑白打印安全：全部灰阶，外框黑、子框深灰、箭头黑。
-COL_BG = "white"
-COL_BORDER = "#111827"
-BOX_BORDER = "#374151"
+COL_BG = "#f8fafc"
+COL_BORDER = "#e2e8f0"
+BOX_BORDER = "#cbd5e1"
 TEXT = "#1f2937"
-ARROW = "#111827"
+ARROW = "#64748b"
 
 
 def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -36,13 +35,13 @@ def rounded_box(draw, x1, y1, x2, y2):
 
 
 def arrow_down(draw, x, y1, y2):
-    draw.line([(x, y1), (x, y2 - 8)], fill=ARROW, width=3)
-    draw.polygon([(x - 6, y2 - 9), (x + 6, y2 - 9), (x, y2)], fill=ARROW)
+    draw.line([(x, y1), (x, y2 - 7)], fill=ARROW, width=2)
+    draw.polygon([(x - 5, y2 - 8), (x + 5, y2 - 8), (x, y2)], fill=ARROW)
 
 
 def arrow_right(draw, x1, x2, y):
-    draw.line([(x1, y), (x2 - 8, y)], fill=ARROW, width=3)
-    draw.polygon([(x2 - 9, y - 6), (x2 - 9, y + 6), (x2, y)], fill=ARROW)
+    draw.line([(x1, y), (x2 - 7, y)], fill=ARROW, width=2)
+    draw.polygon([(x2 - 8, y - 5), (x2 - 8, y + 5), (x2, y)], fill=ARROW)
 
 
 COLUMNS = [
@@ -58,7 +57,7 @@ def main() -> None:
 
     boxes = ((24, 324), (340, 620), (636, 936))
     for (x1, x2), (title, items) in zip(boxes, COLUMNS):
-        draw.rounded_rectangle([x1, 24, x2, 456], radius=10, fill=COL_BG, outline=COL_BORDER, width=3)
+        draw.rounded_rectangle([x1, 24, x2, 456], radius=10, fill=COL_BG, outline=COL_BORDER, width=2)
         draw.text(((x1 + x2) // 2, 42), title, font=F_COL, fill=TEXT, anchor="ma")
         y = 88
         for k, item in enumerate(items):

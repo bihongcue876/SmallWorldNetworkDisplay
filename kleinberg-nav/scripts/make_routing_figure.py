@@ -1,6 +1,5 @@
 """Generate routing.png: one greedy path whose distance halves at every hop."""
 
-import math
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -11,14 +10,12 @@ CELL = 24
 N = 16
 ROOT = Path(__file__).resolve().parent.parent
 
-# 黑白打印安全：路径黑色主线，背景长程边灰虚线，网格点中灰。
-BLACK = "#111827"
-DARK = "#111827"
-MUTED = "#374151"
-FAINT = "#9ca3af"
-NODE = "#94a3b8"
-LEGEND_GRAY = "#374151"
-GRID_LINE = "#d1d5db"
+ORANGE = "#f97316"
+DARK = "#1f2937"
+MUTED = "#475569"
+FAINT = "#dbe3ec"
+NODE = "#cbd5e1"
+LEGEND_GRAY = "#94a3b8"
 
 
 def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -43,22 +40,7 @@ def pos(i: int, j: int) -> tuple[int, int]:
 
 def dashed_circle(draw, cx, cy, r, color):
     for deg in range(0, 360, 12):
-        draw.arc([cx - r, cy - r, cx + r, cy + r], start=deg, end=deg + 7, fill=color, width=2)
-
-
-def dashed_line(draw, a, b, color, dash=6, gap=5, width=1):
-    length = math.hypot(b[0] - a[0], b[1] - a[1])
-    if length == 0:
-        return
-    steps = max(1, int(length // (dash + gap)))
-    for i in range(steps + 1):
-        start = i * (dash + gap)
-        end = min(start + dash, length)
-        if start >= length:
-            break
-        p = (a[0] + (b[0] - a[0]) * start / length, a[1] + (b[1] - a[1]) * start / length)
-        q = (a[0] + (b[0] - a[0]) * end / length, a[1] + (b[1] - a[1]) * end / length)
-        draw.line([p, q], fill=color, width=width)
+        draw.arc([cx - r, cy - r, cx + r, cy + r], start=deg, end=deg + 7, fill=color, width=1)
 
 
 def main() -> None:
@@ -68,9 +50,9 @@ def main() -> None:
     # Grid lines
     for i in range(N):
         x = GRID_X0 + i * CELL
-        draw.line([(x, GRID_Y0 - (N - 1) * CELL), (x, GRID_Y0)], fill=GRID_LINE, width=1)
+        draw.line([(x, GRID_Y0 - (N - 1) * CELL), (x, GRID_Y0)], fill="#f1f5f9", width=1)
         y = GRID_Y0 - i * CELL
-        draw.line([(GRID_X0, y), (GRID_X0 + (N - 1) * CELL, y)], fill=GRID_LINE, width=1)
+        draw.line([(GRID_X0, y), (GRID_X0 + (N - 1) * CELL, y)], fill="#f1f5f9", width=1)
 
     # Long-range edges not on the path
     background_edges = [
@@ -83,13 +65,13 @@ def main() -> None:
         ((2, 9), (11, 14)),
     ]
     for (i1, j1), (i2, j2) in background_edges:
-        dashed_line(draw, pos(i1, j1), pos(i2, j2), FAINT, dash=7, gap=6, width=2)
+        draw.line([pos(i1, j1), pos(i2, j2)], fill=FAINT, width=1)
 
     # Nodes
     for i in range(N):
         for j in range(N):
             x, y = pos(i, j)
-            draw.ellipse([x - 3, y - 3, x + 3, y + 3], fill=NODE)
+            draw.ellipse([x - 2, y - 2, x + 2, y + 2], fill=NODE)
 
     s = pos(2, 2)
     p1 = pos(7, 8)
@@ -102,9 +84,9 @@ def main() -> None:
     draw.text((t[0] + 62, t[1] + 34), "目标邻域", font=F_TINY, fill=MUTED)
 
     # Greedy path
-    draw.line([s, p1, p2, p3, t], fill=BLACK, width=4)
+    draw.line([s, p1, p2, p3, t], fill=ORANGE, width=3)
     for x, y in (s, p1, p2, p3, t):
-        draw.ellipse([x - 6, y - 6, x + 6, y + 6], fill="white", outline=BLACK, width=3)
+        draw.ellipse([x - 5, y - 5, x + 5, y + 5], fill=ORANGE, outline="white", width=2)
 
     draw.text((s[0] - 18, s[1] + 6), "s", font=F_HEAD, fill=DARK)
     draw.text((t[0] + 8, t[1] - 22), "t", font=F_HEAD, fill=DARK)
@@ -117,14 +99,13 @@ def main() -> None:
         ((460, 182), "2 → 0"),
     ]
     for (x, y), value in labels:
-        draw.text((x, y), value, font=F_SMALL, fill=BLACK, stroke_width=3, stroke_fill="white")
+        draw.text((x, y), value, font=F_SMALL, fill=ORANGE, stroke_width=3, stroke_fill="white")
 
     # Legend
     ly = 520
-    draw.line([(140, ly), (176, ly)], fill=BLACK, width=4)
-    draw.ellipse([153, ly - 5, 163, ly + 5], fill="white", outline=BLACK, width=2)
+    draw.line([(140, ly), (176, ly)], fill=ORANGE, width=3)
     draw.text((184, ly - 8), "贪心路径", font=F_SMALL, fill=MUTED)
-    dashed_line(draw, (280, ly), (316, ly), FAINT, dash=7, gap=6, width=2)
+    draw.line([(280, ly), (316, ly)], fill=FAINT, width=1)
     draw.text((324, ly - 8), "其他长程边", font=F_SMALL, fill=MUTED)
     dashed_circle(draw, 440, ly, 9, LEGEND_GRAY)
     draw.text((458, ly - 8), "目标邻域", font=F_SMALL, fill=MUTED)

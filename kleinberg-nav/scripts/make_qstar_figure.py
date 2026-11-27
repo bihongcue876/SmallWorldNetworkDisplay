@@ -26,15 +26,8 @@ BLUE = "#2563eb"
 PURPLE = "#7c3aed"
 TEAL = "#0f766e"
 GREY = "#64748b"
-# 黑白打印安全色板：三规模黑/橙/蓝，实测实线实心、预测虚线空心。
-BLACK = "#111827"
-DORANGE = "#b45309"
-DBLUE = "#1e40af"
-MGRAY = "#6b7280"
 
-SERIES = {128: BLACK, 512: DORANGE, 1024: DBLUE}
-SHAPES = {128: "circle", 512: "triangle", 1024: "square"}
-DASH_PRED = {128: (14, 8), 512: (8, 5), 1024: (5, 4)}
+SERIES = {128: ORANGE, 512: TEAL, 1024: BLUE}
 
 
 def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -107,38 +100,30 @@ def frame(img, box, xlabel, ylabel, xticks, yticks, xlog, ylog, xr, yr):
     return ImageDraw.Draw(img)
 
 
-def marker(draw, px, py, shape, color, radius, hollow=False):
-    if shape == "square":
-        style = dict(fill="white" if hollow else color, outline=color, width=3)
-        draw.rectangle([px - radius, py - radius, px + radius, py + radius], **style)
-    elif shape == "triangle":
-        draw.polygon([(px, py - radius - 1), (px - radius - 1, py + radius), (px + radius + 1, py + radius)],
-                     fill="white" if hollow else color, outline=color, width=3)
-    else:
-        draw.ellipse([px - radius, py - radius, px + radius, py + radius],
-                     fill="white" if hollow else color, outline=color, width=3)
-
-
 def series(draw, xs, ys, box, xr, yr, xlog, ylog, color, width=4, dots=True,
-           dashed_line=False, radius=5, hollow=False, dash_style=None, marker_shape="circle"):
+           dashed_line=False, radius=5, hollow=False):
     x0, y0, x1, y1 = box
     pts = [
         (lerp(x, xr[0], xr[1], x0, x1, xlog), lerp(y, yr[0], yr[1], y1, y0, ylog))
         for x, y in zip(xs, ys)
     ]
-    if dashed_line or dash_style is not None:
-        d, g = dash_style if dash_style is not None else (8, 6)
-        dashed(draw, pts, color, width=width, dash=d, gap=g)
+    if dashed_line:
+        dashed(draw, pts, color, width=width)
     else:
         draw.line(pts, fill=color, width=width, joint="curve")
     if dots:
         for px, py in pts:
-            marker(draw, px, py, marker_shape, color, radius, hollow)
+            if hollow:
+                draw.ellipse([px - radius, py - radius, px + radius, py + radius],
+                             fill="white", outline=color, width=3)
+            else:
+                draw.ellipse([px - radius, py - radius, px + radius, py + radius],
+                             fill=color, outline="white", width=2)
 
 
 def load_measured():
     rows = {}
-    for name in ("main", "large", "large1024", "large1024qgt2"):
+    for name in ("main", "large"):
         path = ROOT / "results" / name / "summary.csv"
         if not path.exists():
             continue
@@ -187,7 +172,7 @@ def main() -> None:
 
     # 左：步数随 q 的变化
     xr = (0, 4)
-    yr = (12, 520)
+    yr = (12, 400)
     draw = frame(img, left, "长程边指数 q", "平均步数",
                  [0, 1, 2, 3, 4], [20, 50, 100, 200, 400],
                  False, True, xr, yr)
@@ -197,19 +182,17 @@ def main() -> None:
             continue
         _, qm, qp, m, p = row
         color = SERIES[n]
-        shape = SHAPES[n]
         qs = sorted(m)
-        series(draw, qs, [m[q] for q in qs], left, xr, yr, False, True, color, width=3,
-               radius=6, marker_shape=shape)
+        series(draw, qs, [m[q] for q in qs], left, xr, yr, False, True, color, width=3, radius=5)
         series(draw, qs, [p[q] for q in qs], left, xr, yr, False, True, color, width=3,
-               radius=6, hollow=True, dash_style=DASH_PRED[n], marker_shape=shape)
+               radius=5, dashed_line=True, hollow=True)
         px = lerp(qm, xr[0], xr[1], left[0], left[2], False)
         draw.line([(px, left[1]), (px, left[3])], fill=color, width=2)
 
     # 右：q* 随 n 的变化
     xr2 = (14, 1200)
     yr2 = (0, 2.6)
-    draw = frame(img, right, "网格边长 n（对数刻度）", "最优幂指数 q*",
+    draw = frame(img, right, "网格边长 n（对数刻度）", "最优指数 q*",
                  [16, 32, 64, 128, 256, 512, 1024], [0, 0.5, 1, 1.5, 2, 2.5],
                  True, False, xr2, yr2)
     py = lerp(2.0, yr2[0], yr2[1], right[3], right[1], False)
@@ -218,27 +201,27 @@ def main() -> None:
 
     ns_all = [r[0] for r in table]
     series(draw, ns_all, [r[1] for r in table], right, xr2, yr2, True, False,
-           BLACK, width=3, radius=7, marker_shape="circle")
+           BLUE, width=3, radius=6)
     series(draw, ns_all, [r[2] for r in table], right, xr2, yr2, True, False,
-           DORANGE, width=3, radius=7, hollow=True, dash_style=(8, 5), marker_shape="circle")
+           RED, width=3, radius=6, dashed_line=False, hollow=True)
 
     entries = [
-        ("实测（实线·实心）", BLACK, None, "circle"),
-        ("机制模型预测（虚线·空心）", DORANGE, (8, 5), None),
+        ("实测 q*", BLUE, False), ("机制模型预测 q*", RED, True),
+        ("实测步数", ORANGE, False), ("预测步数", ORANGE, True),
     ]
-    for i, (label, color, dash_style, shape) in enumerate(entries):
-        x = 150 + i * 300
+    for i, (label, color, is_dash) in enumerate(entries):
+        x = 130 + i * 260
         y = 570
-        if dash_style is not None:
-            dashed(draw, [(x, y), (x + 36, y)], color, width=3, dash=dash_style[0], gap=dash_style[1])
+        if is_dash:
+            dashed(draw, [(x, y), (x + 36, y)], color, width=3, dash=6, gap=4)
             draw.ellipse([x + 13, y - 6, x + 25, y + 6], fill="white", outline=color, width=3)
         else:
             draw.line([(x, y), (x + 36, y)], fill=color, width=4)
-            draw.ellipse([x + 13, y - 6, x + 25, y + 6], fill=color, outline="white", width=2)
+            draw.ellipse([x + 13, y - 6, x + 25, y + 6], fill=color)
         draw.text((x + 48, y), label, font=F_LEGEND, fill=TEXT, anchor="lm")
 
-    draw.text((150, 608),
-              "左图 n=128、512、1024（黑、橙、蓝），实线实心为实测、虚线空心为预测；右图黑为实测 q*、橙为预测 q*。",
+    draw.text((130, 608),
+              "左图 n=128、512、1024（橙、青、蓝），实线实心为实测、虚线空心为预测；右图为全部规模的 q* 对比。",
               font=F_NOTE, fill=MUTED, anchor="la")
 
     out = OUT / "figure-qstar.png"
