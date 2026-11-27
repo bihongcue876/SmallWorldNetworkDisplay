@@ -1,3 +1,11 @@
 # 课程资料与个人信息，不入公共库
 /intro.txt
 /kp.txt
+
+# 本地依赖拷贝与临时工作区
+/pydeps/
+/tmp/
+/tmp_*.py
+
+# 论文成品生成脚本（一次性工具，随 paper/ 一并留本地）
+/make_docx.py

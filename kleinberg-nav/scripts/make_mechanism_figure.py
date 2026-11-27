@@ -28,8 +28,18 @@ ORANGE = "#d97706"
 BLUE = "#2563eb"
 PURPLE = "#7c3aed"
 GREY = "#64748b"
+# 黑白打印安全色板（深色系 + 每条 q 独立线型与标记）：
+BLACK = "#111827"
+DORANGE = "#b45309"
+DBLUE = "#1e40af"
+DPURPLE = "#6d28d9"
+MGRAY = "#6b7280"
 
-COLORS = {1.0: RED, 1.5: ORANGE, 2.0: BLUE, 2.5: PURPLE, 3.0: GREY}
+COLORS = {1.0: BLACK, 1.5: DORANGE, 2.0: DBLUE, 2.5: DPURPLE, 3.0: MGRAY}
+# 实测线线型（None=实线）与理论虚线线型按 q 区分；标记形状按 q 区分。
+DASH_MEASURED = {1.0: None, 1.5: None, 2.0: None, 2.5: None, 3.0: None}
+DASH_THEORY = {1.0: (14, 8), 1.5: (9, 5), 2.0: (5, 4), 2.5: (3, 4), 3.0: (2, 6)}
+SHAPES = {1.0: "circle", 1.5: "triangle", 2.0: "square", 2.5: "diamond", 3.0: "hollow"}
 N_CHOICE = 1024
 EXP_MIN, EXP_MAX = 2, 8
 
@@ -105,21 +115,34 @@ def frame(img, box, xlabel, ylabel, xticks, yticks, xlog, ylog, xr, yr):
     return ImageDraw.Draw(img)
 
 
+def marker(draw, px, py, shape, color, radius):
+    if shape == "square":
+        draw.rectangle([px - radius, py - radius, px + radius, py + radius], fill=color, outline="white", width=2)
+    elif shape == "triangle":
+        draw.polygon([(px, py - radius - 1), (px - radius - 1, py + radius), (px + radius + 1, py + radius)], fill=color, outline="white")
+    elif shape == "diamond":
+        draw.polygon([(px, py - radius - 1), (px + radius + 1, py), (px, py + radius + 1), (px - radius - 1, py)], fill=color, outline="white")
+    elif shape == "hollow":
+        draw.ellipse([px - radius, py - radius, px + radius, py + radius], fill="white", outline=color, width=3)
+    else:
+        draw.ellipse([px - radius, py - radius, px + radius, py + radius], fill=color, outline="white", width=2)
+
+
 def polyline(draw, xs, ys, box, xr, yr, xlog, ylog, color, width=4, dots=True,
-             dashed_line=False, radius=5):
+             dashed_line=False, radius=5, dash_style=None, marker_shape="circle"):
     x0, y0, x1, y1 = box
     points = [
         (lerp(x, xr[0], xr[1], x0, x1, xlog), lerp(y, yr[0], yr[1], y1, y0, ylog))
         for x, y in zip(xs, ys)
     ]
-    if dashed_line:
-        dashed(draw, points, color, width=width)
+    if dashed_line or dash_style is not None:
+        d, g = dash_style if dash_style is not None else (8, 6)
+        dashed(draw, points, color, width=width, dash=d, gap=g)
     else:
         draw.line(points, fill=color, width=width, joint="curve")
     if dots:
         for px, py in points:
-            draw.ellipse([px - radius, py - radius, px + radius, py + radius],
-                         fill=color, outline="white", width=2)
+            marker(draw, px, py, marker_shape, color, radius)
 
 
 def load_buckets():
@@ -170,11 +193,15 @@ def main() -> None:
         if not part:
             continue
         color = COLORS[alpha]
+        shape = SHAPES[alpha]
+        # 理论值：同色虚线（线型按 q 区分），无标记。
         polyline(draw, [r["d"] for r in part], [r["theory"] for r in part], left,
-                 xr, yl, True, True, color, width=2, dots=False, dashed_line=True)
+                 xr, yl, True, True, color, width=2, dots=False,
+                 dash_style=DASH_THEORY[alpha])
+        # 实测：实线 + 按 q 区分的标记。
         polyline(draw, [r["d"] for r in part], [r["rate"] for r in part], left,
-                 xr, yl, True, True, color, width=4 if alpha == 2.0 else 3,
-                 radius=6 if alpha == 2.0 else 5)
+                 xr, yl, True, True, color, width=5 if alpha == 2.0 else 4,
+                 radius=7 if alpha == 2.0 else 6, marker_shape=shape)
 
     # 右图：预测 vs 实测，全部 25 个组合。
     lo, hi = 8, 600
@@ -189,27 +216,32 @@ def main() -> None:
 
     for row in summary:
         color = COLORS[row["alpha"]]
+        shape = SHAPES[row["alpha"]]
         px = lerp(row["steps"], lo, hi, x0, x1, True)
         py = lerp(row["pred"], lo, hi, y1, y0, True)
-        radius = 8 if row["alpha"] == 2.0 else 6
-        draw.ellipse([px - radius, py - radius, px + radius, py + radius],
-                     fill=color, outline="white", width=2)
+        radius = 9 if row["alpha"] == 2.0 else 7
+        marker(draw, px, py, shape, color, radius)
 
-    draw.text((x0 + 24, y0 + 20), "q=2 平均误差 7%", font=F_NOTE, fill=BLUE, anchor="la")
+    draw.text((x0 + 24, y0 + 20), "q=2 平均误差 7%", font=F_NOTE, fill=DBLUE, anchor="la")
     draw.text((x1 - 20, y1 - 26), "y = x", font=F_NOTE, fill=MUTED, anchor="ra")
 
     entries = [
-        ("q=1", RED, False), ("q=1.5", ORANGE, False), ("q=2", BLUE, False),
-        ("q=2.5", PURPLE, False), ("q=3", GREY, False), ("理论值（虚线）", MUTED, True),
+        ("q=1", BLACK, None, "circle"),
+        ("q=1.5", DORANGE, None, "triangle"),
+        ("q=2", DBLUE, None, "square"),
+        ("q=2.5", DPURPLE, None, "diamond"),
+        ("q=3", MGRAY, None, "hollow"),
+        ("理论值（虚线）", MGRAY, (8, 5), None),
     ]
-    for i, (label, color, is_dash) in enumerate(entries):
+    for i, (label, color, dash_style, shape) in enumerate(entries):
         x = 130 + i * 165
         y = 570
-        if is_dash:
-            dashed(draw, [(x, y), (x + 36, y)], color, width=3, dash=6, gap=4)
+        if dash_style is not None:
+            dashed(draw, [(x, y), (x + 36, y)], color, width=3, dash=dash_style[0], gap=dash_style[1])
         else:
             draw.line([(x, y), (x + 36, y)], fill=color, width=4)
-            draw.ellipse([x + 13, y - 6, x + 25, y + 6], fill=color)
+        if shape is not None:
+            marker(draw, x + 18, y, shape, color, 6)
         draw.text((x + 46, y), label, font=F_LEGEND, fill=TEXT, anchor="lm")
 
     draw.text((130, 606), "左图 n=1024，实线为实测、虚线为无参数理论值；右图 25 个 (n, q) 组合，预测来自相对减速率模型。",
